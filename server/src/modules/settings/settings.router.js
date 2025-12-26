@@ -15,6 +15,7 @@ router.patch('/', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), setti
 router.patch('/about', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('profileImage'), handleUploadError, settingsController.updateAboutContent);
 router.patch('/contact', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), settingsController.updateContactInfo);
 router.patch('/social', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), settingsController.updateSocialLinks);
+router.patch('/hero', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('heroImage'), handleUploadError, settingsController.updateHeroSection);
 router.post('/logo', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('logo'), handleUploadError, settingsController.uploadLogo);
 
 export default router;

@@ -15,6 +15,7 @@ export const getPublicSettings = asyncHandler(async (req, res) => {
             siteName: settings.siteName,
             siteDescription: settings.siteDescription,
             logo: settings.logo,
+            hero: settings.hero,
             about: settings.about,
             contact: settings.contact,
             socialLinks: settings.socialLinks,
@@ -61,7 +62,7 @@ export const updateSettings = asyncHandler(async (req, res) => {
     
     const allowedFields = [
         'siteName', 'siteDescription', 'about', 'contact', 
-        'socialLinks', 'footer', 'seo', 'features'
+        'socialLinks', 'footer', 'seo', 'features', 'hero'
     ];
     
     allowedFields.forEach(field => {
@@ -204,5 +205,53 @@ export const uploadLogo = asyncHandler(async (req, res) => {
         success: true,
         message: 'Logo uploaded successfully',
         data: { logo: settings.logo }
+    });
+});
+
+/**
+ * Update hero section (admin only)
+ */
+export const updateHeroSection = asyncHandler(async (req, res) => {
+    const settings = await SiteSettings.getSettings();
+    
+    // Handle file upload for background image
+    if (req.file) {
+        // Delete old image if exists
+        if (settings.hero?.backgroundImage?.publicId) {
+            try {
+                await deleteFromCloudinary(settings.hero.backgroundImage.publicId);
+            } catch (e) {
+                console.error('Failed to delete old hero image:', e);
+            }
+        }
+        if (!settings.hero) settings.hero = {};
+        settings.hero.backgroundImage = {
+            url: req.file.path,
+            publicId: req.file.filename
+        };
+    }
+    
+    // Update hero text fields
+    const heroFields = [
+        'headline', 'subheadline', 'description', 'badge',
+        'ctaText', 'ctaLink', 'secondaryCtaText', 'secondaryCtaLink',
+        'statsNumber', 'statsLabel'
+    ];
+    
+    if (!settings.hero) settings.hero = {};
+    
+    heroFields.forEach(field => {
+        if (req.body[field] !== undefined) {
+            settings.hero[field] = req.body[field];
+        }
+    });
+    
+    settings.lastUpdatedBy = req.user._id;
+    await settings.save();
+    
+    res.status(200).json({
+        success: true,
+        message: 'Hero section updated successfully',
+        data: { hero: settings.hero }
     });
 });

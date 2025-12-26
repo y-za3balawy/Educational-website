@@ -32,6 +32,24 @@ const siteSettingsSchema = new mongoose.Schema({
         publicId: String
     },
     
+    // Hero Section
+    hero: {
+        backgroundImage: {
+            url: String,
+            publicId: String
+        },
+        headline: { type: String, default: 'Master Business & Economics' },
+        subheadline: { type: String, default: 'with Mr. Mahmoud Said' },
+        description: { type: String, default: 'Access comprehensive study materials, past papers with mark schemes, and personalized teaching for Cambridge, Edexcel, and Oxford O-Level & A-Level examinations.' },
+        badge: { type: String, default: 'Now accepting new students' },
+        ctaText: { type: String, default: 'Browse Past Papers' },
+        ctaLink: { type: String, default: '/past-papers' },
+        secondaryCtaText: { type: String, default: 'Learn More' },
+        secondaryCtaLink: { type: String, default: '/about' },
+        statsNumber: { type: String, default: '500+' },
+        statsLabel: { type: String, default: 'Students taught successfully' }
+    },
+    
     // About Page Content
     about: {
         // Profile Section

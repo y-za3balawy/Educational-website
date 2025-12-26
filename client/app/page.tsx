@@ -2,7 +2,6 @@ import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/hero-section"
 import { RecentPosts } from "@/components/recent-posts"
-import { FeaturedQuizzes } from "@/components/featured-quizzes"
 
 export default function HomePage() {
   return (
@@ -11,7 +10,6 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <RecentPosts />
-        <FeaturedQuizzes />
       </main>
       <Footer />
     </div>

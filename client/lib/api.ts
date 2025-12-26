@@ -513,6 +513,16 @@ class ApiClient {
     async uploadLogo(data: FormData) {
         return this.uploadRequest('/settings/logo', data, 'POST');
     }
+
+    async updateHeroSection(data: FormData | Record<string, unknown>) {
+        if (data instanceof FormData) {
+            return this.uploadRequest('/settings/hero', data, 'PATCH');
+        }
+        return this.request('/settings/hero', {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    }
 }
 
 export const api = new ApiClient();

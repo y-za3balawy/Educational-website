@@ -9,13 +9,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { api } from "@/lib/api"
 import { toast } from "@/lib/toast"
-import { Loader2, Save, Upload, Plus, Trash2, User, Mail, Globe, FileText } from "lucide-react"
+import { Loader2, Save, Upload, Plus, Trash2, User, Mail, Globe, FileText, Image as ImageIcon } from "lucide-react"
 
 interface Qualification {
   _id?: string
   icon: string
   title: string
   description: string
+}
+
+interface HeroSettings {
+  backgroundImage?: { url: string; publicId?: string }
+  headline: string
+  subheadline: string
+  description: string
+  badge: string
+  ctaText: string
+  ctaLink: string
+  secondaryCtaText: string
+  secondaryCtaLink: string
+  statsNumber: string
+  statsLabel: string
 }
 
 interface AboutSettings {
@@ -56,6 +70,20 @@ export default function SiteSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [profileImage, setProfileImage] = useState<File | null>(null)
+  const [heroImage, setHeroImage] = useState<File | null>(null)
+  
+  const [hero, setHero] = useState<HeroSettings>({
+    headline: "Master Business & Economics",
+    subheadline: "with Mr. Mahmoud Said",
+    description: "Access comprehensive study materials, past papers with mark schemes, and personalized teaching for Cambridge, Edexcel, and Oxford O-Level & A-Level examinations.",
+    badge: "Now accepting new students",
+    ctaText: "Browse Past Papers",
+    ctaLink: "/past-papers",
+    secondaryCtaText: "Learn More",
+    secondaryCtaLink: "/about",
+    statsNumber: "500+",
+    statsLabel: "Students taught successfully"
+  })
   
   const [about, setAbout] = useState<AboutSettings>({
     name: "", title: "", shortBio: "", email: "", phone: "", location: "",
@@ -77,8 +105,9 @@ export default function SiteSettingsPage() {
   async function fetchSettings() {
     try {
       const res = await api.getAllSettings()
-      const data = res.data as { settings: { about: AboutSettings; contact: ContactSettings; socialLinks: SocialLink[] } }
+      const data = res.data as { settings: { hero?: HeroSettings; about: AboutSettings; contact: ContactSettings; socialLinks: SocialLink[] } }
       if (data.settings) {
+        if (data.settings.hero) setHero({ ...hero, ...data.settings.hero })
         setAbout(data.settings.about || about)
         setContact(data.settings.contact || contact)
         setSocialLinks(data.settings.socialLinks || [])
@@ -87,6 +116,28 @@ export default function SiteSettingsPage() {
       console.error("Failed to fetch settings:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleSaveHero() {
+    setSaving(true)
+    try {
+      const formData = new FormData()
+      if (heroImage) {
+        formData.append("heroImage", heroImage)
+      }
+      Object.entries(hero).forEach(([key, value]) => {
+        if (key !== "backgroundImage" && value !== undefined && value !== null) {
+          formData.append(key, String(value))
+        }
+      })
+      await api.updateHeroSection(formData)
+      toast.success("Hero section updated!")
+      setHeroImage(null)
+    } catch {
+      // Error handled globally
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -183,12 +234,108 @@ export default function SiteSettingsPage() {
         <p className="text-muted-foreground">Manage your website content and configuration</p>
       </div>
 
-      <Tabs defaultValue="about" className="space-y-6">
+      <Tabs defaultValue="hero" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="hero"><ImageIcon className="h-4 w-4 mr-2" />Hero Section</TabsTrigger>
           <TabsTrigger value="about"><User className="h-4 w-4 mr-2" />About Page</TabsTrigger>
           <TabsTrigger value="contact"><Mail className="h-4 w-4 mr-2" />Contact Info</TabsTrigger>
           <TabsTrigger value="social"><Globe className="h-4 w-4 mr-2" />Social Links</TabsTrigger>
         </TabsList>
+
+        {/* Hero Section Tab */}
+        <TabsContent value="hero" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Hero Background Image</CardTitle>
+              <CardDescription>Upload a background image for the home page hero section</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-6">
+                <div className="flex-shrink-0">
+                  <div className="w-48 h-32 rounded-lg bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-border">
+                    {heroImage ? (
+                      <img src={URL.createObjectURL(heroImage)} alt="" className="w-full h-full object-cover" />
+                    ) : hero.backgroundImage?.url ? (
+                      <img src={hero.backgroundImage.url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                    )}
+                  </div>
+                  <label className="mt-2 block">
+                    <span className="text-sm text-primary cursor-pointer hover:underline flex items-center gap-1">
+                      <Upload className="h-4 w-4" />Upload Image
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => setHeroImage(e.target.files?.[0] || null)} />
+                  </label>
+                </div>
+                <div className="flex-1 text-sm text-muted-foreground">
+                  <p>Recommended: High resolution image (1920x1080 or larger)</p>
+                  <p>The image will be displayed behind the hero text with a gradient overlay.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Hero Content</CardTitle>
+              <CardDescription>Customize the text displayed on the home page</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Headline</Label>
+                  <Input value={hero.headline} onChange={(e) => setHero({ ...hero, headline: e.target.value })} placeholder="Master Business & Economics" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Subheadline</Label>
+                  <Input value={hero.subheadline} onChange={(e) => setHero({ ...hero, subheadline: e.target.value })} placeholder="with Mr. Mahmoud Said" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Badge Text</Label>
+                <Input value={hero.badge} onChange={(e) => setHero({ ...hero, badge: e.target.value })} placeholder="Now accepting new students" />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea value={hero.description} onChange={(e) => setHero({ ...hero, description: e.target.value })} rows={3} placeholder="Brief description..." />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Primary Button Text</Label>
+                  <Input value={hero.ctaText} onChange={(e) => setHero({ ...hero, ctaText: e.target.value })} placeholder="Browse Past Papers" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Primary Button Link</Label>
+                  <Input value={hero.ctaLink} onChange={(e) => setHero({ ...hero, ctaLink: e.target.value })} placeholder="/past-papers" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Secondary Button Text</Label>
+                  <Input value={hero.secondaryCtaText} onChange={(e) => setHero({ ...hero, secondaryCtaText: e.target.value })} placeholder="Learn More" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Secondary Button Link</Label>
+                  <Input value={hero.secondaryCtaLink} onChange={(e) => setHero({ ...hero, secondaryCtaLink: e.target.value })} placeholder="/about" />
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Stats Number</Label>
+                  <Input value={hero.statsNumber} onChange={(e) => setHero({ ...hero, statsNumber: e.target.value })} placeholder="500+" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Stats Label</Label>
+                  <Input value={hero.statsLabel} onChange={(e) => setHero({ ...hero, statsLabel: e.target.value })} placeholder="Students taught successfully" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Button onClick={handleSaveHero} disabled={saving} className="w-full sm:w-auto">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+            Save Hero Section
+          </Button>
+        </TabsContent>
 
         {/* About Page Tab */}
         <TabsContent value="about" className="space-y-6">
