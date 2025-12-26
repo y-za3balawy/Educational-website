@@ -523,6 +523,37 @@ class ApiClient {
             body: JSON.stringify(data),
         });
     }
+
+    // ==================== REVIEWS ====================
+    
+    async getReviews() {
+        return this.request('/settings/reviews');
+    }
+
+    async updateReviewsSection(data: { sectionTitle?: string; sectionSubtitle?: string; showSection?: boolean }) {
+        return this.request('/settings/reviews', {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async addReview(data: FormData) {
+        return this.uploadRequest('/settings/reviews', data, 'POST');
+    }
+
+    async updateReview(reviewId: string, data: FormData | Record<string, unknown>) {
+        if (data instanceof FormData) {
+            return this.uploadRequest(`/settings/reviews/${reviewId}`, data, 'PATCH');
+        }
+        return this.request(`/settings/reviews/${reviewId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteReview(reviewId: string) {
+        return this.request(`/settings/reviews/${reviewId}`, { method: 'DELETE' });
+    }
 }
 
 export const api = new ApiClient();

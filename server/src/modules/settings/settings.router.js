@@ -18,4 +18,11 @@ router.patch('/social', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
 router.patch('/hero', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('heroImage'), handleUploadError, settingsController.updateHeroSection);
 router.post('/logo', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('logo'), handleUploadError, settingsController.uploadLogo);
 
+// Reviews routes
+router.get('/reviews', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), settingsController.getReviews);
+router.patch('/reviews', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), settingsController.updateReviewsSection);
+router.post('/reviews', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('reviewImage'), handleUploadError, settingsController.addReview);
+router.patch('/reviews/:reviewId', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('reviewImage'), handleUploadError, settingsController.updateReview);
+router.delete('/reviews/:reviewId', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), settingsController.deleteReview);
+
 export default router;

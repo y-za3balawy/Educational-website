@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { HeroSection } from "@/components/hero-section"
+import { ReviewsSection } from "@/components/reviews-section"
 import { RecentPosts } from "@/components/recent-posts"
 
 export default function HomePage() {
@@ -9,6 +10,7 @@ export default function HomePage() {
       <Navigation />
       <main>
         <HeroSection />
+        <ReviewsSection />
         <RecentPosts />
       </main>
       <Footer />

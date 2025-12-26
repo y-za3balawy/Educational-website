@@ -12,6 +12,17 @@ const socialLinkSchema = new mongoose.Schema({
     icon: { type: String }
 }, { _id: true });
 
+const reviewSchema = new mongoose.Schema({
+    image: {
+        url: { type: String, required: true },
+        publicId: String
+    },
+    studentName: { type: String },
+    caption: { type: String },
+    order: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true }
+}, { _id: true, timestamps: true });
+
 const siteSettingsSchema = new mongoose.Schema({
     // Singleton identifier
     key: {
@@ -38,6 +49,13 @@ const siteSettingsSchema = new mongoose.Schema({
             url: String,
             publicId: String
         },
+        // Image display options
+        imagePosition: { type: String, default: 'right', enum: ['left', 'center', 'right'] },
+        imageSize: { type: String, default: 'cover', enum: ['cover', 'contain', 'auto'] },
+        overlayOpacity: { type: Number, default: 70, min: 0, max: 100 },
+        overlayDirection: { type: String, default: 'left-to-right', enum: ['left-to-right', 'right-to-left', 'top-to-bottom', 'full'] },
+        showFeatureCards: { type: Boolean, default: false },
+        // Text content
         headline: { type: String, default: 'Master Business & Economics' },
         subheadline: { type: String, default: 'with Mr. Mahmoud Said' },
         description: { type: String, default: 'Access comprehensive study materials, past papers with mark schemes, and personalized teaching for Cambridge, Edexcel, and Oxford O-Level & A-Level examinations.' },
@@ -91,6 +109,14 @@ const siteSettingsSchema = new mongoose.Schema({
     
     // Social Links
     socialLinks: [socialLinkSchema],
+    
+    // Reviews/Testimonials Section
+    reviews: {
+        sectionTitle: { type: String, default: 'Student Reviews' },
+        sectionSubtitle: { type: String, default: 'What our students say about us' },
+        showSection: { type: Boolean, default: true },
+        items: [reviewSchema]
+    },
     
     // Footer Content
     footer: {

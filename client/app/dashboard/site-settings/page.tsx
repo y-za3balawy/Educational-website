@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { api } from "@/lib/api"
 import { toast } from "@/lib/toast"
-import { Loader2, Save, Upload, Plus, Trash2, User, Mail, Globe, FileText, Image as ImageIcon } from "lucide-react"
+import { Loader2, Save, Upload, Plus, Trash2, User, Mail, Globe, FileText, Image as ImageIcon, Star } from "lucide-react"
 
 interface Qualification {
   _id?: string
@@ -18,8 +18,22 @@ interface Qualification {
   description: string
 }
 
+interface Review {
+  _id?: string
+  image: { url: string; publicId?: string }
+  studentName: string
+  caption: string
+  order: number
+  isActive: boolean
+}
+
 interface HeroSettings {
   backgroundImage?: { url: string; publicId?: string }
+  imagePosition: string
+  imageSize: string
+  overlayOpacity: number
+  overlayDirection: string
+  showFeatureCards: boolean
   headline: string
   subheadline: string
   description: string
@@ -73,6 +87,11 @@ export default function SiteSettingsPage() {
   const [heroImage, setHeroImage] = useState<File | null>(null)
   
   const [hero, setHero] = useState<HeroSettings>({
+    imagePosition: "right",
+    imageSize: "cover",
+    overlayOpacity: 70,
+    overlayDirection: "left-to-right",
+    showFeatureCards: false,
     headline: "Master Business & Economics",
     subheadline: "with Mr. Mahmoud Said",
     description: "Access comprehensive study materials, past papers with mark schemes, and personalized teaching for Cambridge, Edexcel, and Oxford O-Level & A-Level examinations.",
@@ -97,6 +116,22 @@ export default function SiteSettingsPage() {
   })
   
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
+  
+  // Reviews state
+  const [reviews, setReviews] = useState<{
+    sectionTitle: string
+    sectionSubtitle: string
+    showSection: boolean
+    items: Review[]
+  }>({
+    sectionTitle: "Student Reviews",
+    sectionSubtitle: "What our students say about us",
+    showSection: true,
+    items: []
+  })
+  const [newReviewImage, setNewReviewImage] = useState<File | null>(null)
+  const [newReviewName, setNewReviewName] = useState("")
+  const [newReviewCaption, setNewReviewCaption] = useState("")
 
   useEffect(() => {
     fetchSettings()
@@ -105,12 +140,13 @@ export default function SiteSettingsPage() {
   async function fetchSettings() {
     try {
       const res = await api.getAllSettings()
-      const data = res.data as { settings: { hero?: HeroSettings; about: AboutSettings; contact: ContactSettings; socialLinks: SocialLink[] } }
+      const data = res.data as { settings: { hero?: HeroSettings; about: AboutSettings; contact: ContactSettings; socialLinks: SocialLink[]; reviews?: typeof reviews } }
       if (data.settings) {
         if (data.settings.hero) setHero({ ...hero, ...data.settings.hero })
         setAbout(data.settings.about || about)
         setContact(data.settings.contact || contact)
         setSocialLinks(data.settings.socialLinks || [])
+        if (data.settings.reviews) setReviews({ ...reviews, ...data.settings.reviews })
       }
     } catch (error) {
       console.error("Failed to fetch settings:", error)
@@ -191,6 +227,73 @@ export default function SiteSettingsPage() {
     }
   }
 
+  async function handleSaveReviewsSection() {
+    setSaving(true)
+    try {
+      await api.updateReviewsSection({
+        sectionTitle: reviews.sectionTitle,
+        sectionSubtitle: reviews.sectionSubtitle,
+        showSection: reviews.showSection
+      })
+      toast.success("Reviews section updated!")
+    } catch {
+      // Error handled globally
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleAddReview() {
+    if (!newReviewImage) {
+      toast.error("Please select an image")
+      return
+    }
+    setSaving(true)
+    try {
+      const formData = new FormData()
+      formData.append("reviewImage", newReviewImage)
+      formData.append("studentName", newReviewName)
+      formData.append("caption", newReviewCaption)
+      await api.addReview(formData)
+      toast.success("Review added!")
+      setNewReviewImage(null)
+      setNewReviewName("")
+      setNewReviewCaption("")
+      fetchSettings()
+    } catch {
+      // Error handled globally
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDeleteReview(reviewId: string) {
+    if (!confirm("Are you sure you want to delete this review?")) return
+    setSaving(true)
+    try {
+      await api.deleteReview(reviewId)
+      toast.success("Review deleted!")
+      fetchSettings()
+    } catch {
+      // Error handled globally
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleToggleReviewActive(reviewId: string, isActive: boolean) {
+    setSaving(true)
+    try {
+      await api.updateReview(reviewId, { isActive: !isActive })
+      toast.success(isActive ? "Review hidden" : "Review visible")
+      fetchSettings()
+    } catch {
+      // Error handled globally
+    } finally {
+      setSaving(false)
+    }
+  }
+
   function addQualification() {
     setAbout({
       ...about,
@@ -237,6 +340,7 @@ export default function SiteSettingsPage() {
       <Tabs defaultValue="hero" className="space-y-6">
         <TabsList>
           <TabsTrigger value="hero"><ImageIcon className="h-4 w-4 mr-2" />Hero Section</TabsTrigger>
+          <TabsTrigger value="reviews"><Star className="h-4 w-4 mr-2" />Reviews</TabsTrigger>
           <TabsTrigger value="about"><User className="h-4 w-4 mr-2" />About Page</TabsTrigger>
           <TabsTrigger value="contact"><Mail className="h-4 w-4 mr-2" />Contact Info</TabsTrigger>
           <TabsTrigger value="social"><Globe className="h-4 w-4 mr-2" />Social Links</TabsTrigger>
@@ -272,6 +376,76 @@ export default function SiteSettingsPage() {
                   <p>Recommended: High resolution image (1920x1080 or larger)</p>
                   <p>The image will be displayed behind the hero text with a gradient overlay.</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Image Display Options</CardTitle>
+              <CardDescription>Control how the background image appears</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Image Position</Label>
+                  <select 
+                    value={hero.imagePosition} 
+                    onChange={(e) => setHero({ ...hero, imagePosition: e.target.value })}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
+                  >
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Image Size</Label>
+                  <select 
+                    value={hero.imageSize} 
+                    onChange={(e) => setHero({ ...hero, imageSize: e.target.value })}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
+                  >
+                    <option value="cover">Cover (fill area)</option>
+                    <option value="contain">Contain (show full image)</option>
+                    <option value="auto">Auto (original size)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Overlay Direction</Label>
+                  <select 
+                    value={hero.overlayDirection} 
+                    onChange={(e) => setHero({ ...hero, overlayDirection: e.target.value })}
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
+                  >
+                    <option value="left-to-right">Left to Right (text on left)</option>
+                    <option value="right-to-left">Right to Left (text on right)</option>
+                    <option value="top-to-bottom">Top to Bottom</option>
+                    <option value="full">Full Overlay</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Overlay Opacity: {hero.overlayOpacity}%</Label>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    value={hero.overlayOpacity}
+                    onChange={(e) => setHero({ ...hero, overlayOpacity: parseInt(e.target.value) })}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">Lower = more visible image, Higher = more visible text</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="showFeatureCards"
+                  checked={hero.showFeatureCards}
+                  onChange={(e) => setHero({ ...hero, showFeatureCards: e.target.checked })}
+                  className="rounded"
+                />
+                <Label htmlFor="showFeatureCards">Show feature cards alongside image</Label>
               </div>
             </CardContent>
           </Card>
@@ -335,6 +509,147 @@ export default function SiteSettingsPage() {
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             Save Hero Section
           </Button>
+        </TabsContent>
+
+        {/* Reviews Tab */}
+        <TabsContent value="reviews" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Reviews Section Settings</CardTitle>
+              <CardDescription>Configure the reviews section on your home page</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <input 
+                  type="checkbox" 
+                  id="showReviewsSection"
+                  checked={reviews.showSection}
+                  onChange={(e) => setReviews({ ...reviews, showSection: e.target.checked })}
+                  className="rounded"
+                />
+                <Label htmlFor="showReviewsSection">Show reviews section on home page</Label>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Section Title</Label>
+                  <Input 
+                    value={reviews.sectionTitle} 
+                    onChange={(e) => setReviews({ ...reviews, sectionTitle: e.target.value })} 
+                    placeholder="Student Reviews" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Section Subtitle</Label>
+                  <Input 
+                    value={reviews.sectionSubtitle} 
+                    onChange={(e) => setReviews({ ...reviews, sectionSubtitle: e.target.value })} 
+                    placeholder="What our students say about us" 
+                  />
+                </div>
+              </div>
+              <Button onClick={handleSaveReviewsSection} disabled={saving} size="sm">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Settings
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Add New Review</CardTitle>
+              <CardDescription>Upload a screenshot or image of a student review</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-6">
+                <div className="flex-shrink-0">
+                  <div className="w-40 h-32 rounded-lg bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-border">
+                    {newReviewImage ? (
+                      <img src={URL.createObjectURL(newReviewImage)} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                    )}
+                  </div>
+                  <label className="mt-2 block">
+                    <span className="text-sm text-primary cursor-pointer hover:underline flex items-center gap-1">
+                      <Upload className="h-4 w-4" />Select Image
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewReviewImage(e.target.files?.[0] || null)} />
+                  </label>
+                </div>
+                <div className="flex-1 space-y-4">
+                  <div className="space-y-2">
+                    <Label>Student Name (optional)</Label>
+                    <Input 
+                      value={newReviewName} 
+                      onChange={(e) => setNewReviewName(e.target.value)} 
+                      placeholder="Student name" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Caption (optional)</Label>
+                    <Input 
+                      value={newReviewCaption} 
+                      onChange={(e) => setNewReviewCaption(e.target.value)} 
+                      placeholder="Brief caption" 
+                    />
+                  </div>
+                  <Button onClick={handleAddReview} disabled={saving || !newReviewImage}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                    Add Review
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Existing Reviews ({reviews.items.length})</CardTitle>
+              <CardDescription>Manage your uploaded review images</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {reviews.items.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No reviews added yet. Upload your first review above.</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {reviews.items.map((review) => (
+                    <div key={review._id} className={`relative group rounded-lg overflow-hidden border ${review.isActive ? 'border-border' : 'border-destructive/50 opacity-50'}`}>
+                      <div className="aspect-[4/3] relative">
+                        <img src={review.image.url} alt={review.studentName || 'Review'} className="w-full h-full object-cover" />
+                      </div>
+                      {(review.studentName || review.caption) && (
+                        <div className="p-2 bg-card">
+                          {review.studentName && <p className="text-xs font-medium truncate">{review.studentName}</p>}
+                          {review.caption && <p className="text-xs text-muted-foreground truncate">{review.caption}</p>}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="secondary"
+                          onClick={() => handleToggleReviewActive(review._id!, review.isActive)}
+                        >
+                          {review.isActive ? 'Hide' : 'Show'}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => handleDeleteReview(review._id!)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {!review.isActive && (
+                        <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded">
+                          Hidden
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* About Page Tab */}
