@@ -43,15 +43,15 @@ export function Navigation() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-6xl mx-auto px-6 py-4">
+      <div className="max-w-6xl mx-auto px-4 py-1.5">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" />
-            <span className="font-semibold text-lg">Mr. Mahmoud Said</span>
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <span className="font-semibold text-base">Mr. Mahmoud Said</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             {navItems.map((item) => (
               <Link
                 key={item.name}
@@ -67,21 +67,21 @@ export function Navigation() {
           </div>
 
           {/* Theme Toggle & Auth Buttons - Desktop */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
             <ThemeToggle />
             {loading ? (
-              <div className="h-9 w-20 bg-muted animate-pulse rounded-md" />
+              <div className="h-8 w-20 bg-muted animate-pulse rounded-md" />
             ) : user ? (
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 text-sm hover:bg-muted rounded-lg px-3 py-2 transition-colors"
+                  className="flex items-center gap-1.5 text-sm hover:bg-muted rounded-lg px-2 py-1.5 transition-colors"
                 >
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary" />
+                  <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <User className="h-3.5 w-3.5 text-primary" />
                   </div>
-                  <span className="text-muted-foreground">{user.firstName}</span>
-                  <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", userMenuOpen && "rotate-180")} />
+                  <span className="text-muted-foreground text-sm">{user.firstName}</span>
+                  <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", userMenuOpen && "rotate-180")} />
                 </button>
                 
                 {/* User Dropdown Menu */}
