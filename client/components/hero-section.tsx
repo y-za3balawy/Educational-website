@@ -14,6 +14,10 @@ interface HeroSettings {
   overlayOpacity: number
   overlayDirection: string
   showFeatureCards: boolean
+  headlineColor: string
+  subheadlineColor: string
+  descriptionColor: string
+  badgeColor: string
   headline: string
   subheadline: string
   description: string
@@ -32,6 +36,10 @@ const defaultHero: HeroSettings = {
   overlayOpacity: 70,
   overlayDirection: "left-to-right",
   showFeatureCards: false,
+  headlineColor: "",
+  subheadlineColor: "",
+  descriptionColor: "",
+  badgeColor: "",
   headline: "Master Business & Economics",
   subheadline: "with Mr. Mahmoud Said",
   description: "Access comprehensive study materials, past papers with mark schemes, and personalized teaching for Cambridge, Edexcel, and Oxford O-Level & A-Level examinations.",
@@ -85,8 +93,6 @@ export function HeroSection() {
   // Generate overlay gradient based on direction and opacity
   const getOverlayStyle = () => {
     const opacity = hero.overlayOpacity / 100
-    const bgColor = `rgba(var(--background-rgb, 0, 0, 0), ${opacity})`
-    const transparent = "transparent"
     
     switch (hero.overlayDirection) {
       case "left-to-right":
@@ -123,19 +129,26 @@ export function HeroSection() {
       <div className="relative z-10 max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className={hero.backgroundImage?.url ? "bg-background/60 backdrop-blur-sm p-6 rounded-2xl lg:bg-transparent lg:backdrop-blur-none lg:p-0" : ""}>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm mb-6">
+            <div 
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm mb-6"
+              style={hero.badgeColor ? { color: hero.badgeColor } : undefined}
+            >
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" style={hero.badgeColor ? { backgroundColor: hero.badgeColor } : undefined}></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" style={hero.badgeColor ? { backgroundColor: hero.badgeColor } : undefined}></span>
               </span>
               {hero.badge}
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 text-balance">
-              {hero.headline} <span className="text-primary">{hero.subheadline}</span>
+              <span style={hero.headlineColor ? { color: hero.headlineColor } : undefined}>{hero.headline}</span>{" "}
+              <span className="text-primary" style={hero.subheadlineColor ? { color: hero.subheadlineColor } : undefined}>{hero.subheadline}</span>
             </h1>
 
-            <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
+            <p 
+              className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg"
+              style={hero.descriptionColor ? { color: hero.descriptionColor } : undefined}
+            >
               {hero.description}
             </p>
 

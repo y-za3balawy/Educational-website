@@ -245,7 +245,8 @@ export const updateHeroSection = asyncHandler(async (req, res) => {
         'headline', 'subheadline', 'description', 'badge',
         'ctaText', 'ctaLink', 'secondaryCtaText', 'secondaryCtaLink',
         'statsNumber', 'statsLabel',
-        'imagePosition', 'imageSize', 'overlayOpacity', 'overlayDirection', 'showFeatureCards'
+        'imagePosition', 'imageSize', 'overlayOpacity', 'overlayDirection', 'showFeatureCards',
+        'headlineColor', 'subheadlineColor', 'descriptionColor', 'badgeColor'
     ];
     
     if (!settings.hero) settings.hero = {};

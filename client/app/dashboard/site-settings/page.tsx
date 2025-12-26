@@ -34,6 +34,10 @@ interface HeroSettings {
   overlayOpacity: number
   overlayDirection: string
   showFeatureCards: boolean
+  headlineColor: string
+  subheadlineColor: string
+  descriptionColor: string
+  badgeColor: string
   headline: string
   subheadline: string
   description: string
@@ -92,6 +96,10 @@ export default function SiteSettingsPage() {
     overlayOpacity: 70,
     overlayDirection: "left-to-right",
     showFeatureCards: false,
+    headlineColor: "",
+    subheadlineColor: "",
+    descriptionColor: "",
+    badgeColor: "",
     headline: "Master Business & Economics",
     subheadline: "with Mr. Mahmoud Said",
     description: "Access comprehensive study materials, past papers with mark schemes, and personalized teaching for Cambridge, Edexcel, and Oxford O-Level & A-Level examinations.",
@@ -142,9 +150,46 @@ export default function SiteSettingsPage() {
       const res = await api.getAllSettings()
       const data = res.data as { settings: { hero?: HeroSettings; about: AboutSettings; contact: ContactSettings; socialLinks: SocialLink[]; reviews?: typeof reviews } }
       if (data.settings) {
-        if (data.settings.hero) setHero({ ...hero, ...data.settings.hero })
-        setAbout(data.settings.about || about)
-        setContact(data.settings.contact || contact)
+        if (data.settings.hero) {
+          // Ensure color fields are always strings (not undefined)
+          setHero({ 
+            ...hero, 
+            ...data.settings.hero,
+            headlineColor: data.settings.hero.headlineColor || "",
+            subheadlineColor: data.settings.hero.subheadlineColor || "",
+            descriptionColor: data.settings.hero.descriptionColor || "",
+            badgeColor: data.settings.hero.badgeColor || ""
+          })
+        }
+        // Ensure all about fields are strings (not undefined)
+        if (data.settings.about) {
+          setAbout({
+            ...about,
+            ...data.settings.about,
+            name: data.settings.about.name || "",
+            title: data.settings.about.title || "",
+            shortBio: data.settings.about.shortBio || "",
+            email: data.settings.about.email || "",
+            phone: data.settings.about.phone || "",
+            location: data.settings.about.location || "",
+            mainHeading: data.settings.about.mainHeading || "About Me",
+            mainContent: data.settings.about.mainContent || "",
+            philosophyHeading: data.settings.about.philosophyHeading || "Teaching Philosophy",
+            philosophyQuote: data.settings.about.philosophyQuote || "",
+            ctaText: data.settings.about.ctaText || "Book a Session",
+            ctaLink: data.settings.about.ctaLink || "/contact"
+          })
+        }
+        // Ensure all contact fields are strings (not undefined)
+        if (data.settings.contact) {
+          setContact({
+            email: data.settings.contact.email || "",
+            phone: data.settings.contact.phone || "",
+            address: data.settings.contact.address || "",
+            workingHours: data.settings.contact.workingHours || "",
+            responseTime: data.settings.contact.responseTime || ""
+          })
+        }
         setSocialLinks(data.settings.socialLinks || [])
         if (data.settings.reviews) setReviews({ ...reviews, ...data.settings.reviews })
       }
@@ -254,12 +299,23 @@ export default function SiteSettingsPage() {
       formData.append("reviewImage", newReviewImage)
       formData.append("studentName", newReviewName)
       formData.append("caption", newReviewCaption)
-      await api.addReview(formData)
+      const res = await api.addReview(formData)
+      const data = res.data as { review: Review }
+      
+      // Update state immediately with the new review
+      setReviews(prev => ({
+        ...prev,
+        items: [...prev.items, data.review]
+      }))
+      
       toast.success("Review added!")
       setNewReviewImage(null)
       setNewReviewName("")
       setNewReviewCaption("")
-      fetchSettings()
+      
+      // Reset file input
+      const fileInput = document.getElementById('newReviewImageInput') as HTMLInputElement
+      if (fileInput) fileInput.value = ''
     } catch {
       // Error handled globally
     } finally {
@@ -272,8 +328,12 @@ export default function SiteSettingsPage() {
     setSaving(true)
     try {
       await api.deleteReview(reviewId)
+      // Update state immediately
+      setReviews(prev => ({
+        ...prev,
+        items: prev.items.filter(r => r._id !== reviewId)
+      }))
       toast.success("Review deleted!")
-      fetchSettings()
     } catch {
       // Error handled globally
     } finally {
@@ -285,8 +345,14 @@ export default function SiteSettingsPage() {
     setSaving(true)
     try {
       await api.updateReview(reviewId, { isActive: !isActive })
+      // Update state immediately
+      setReviews(prev => ({
+        ...prev,
+        items: prev.items.map(r => 
+          r._id === reviewId ? { ...r, isActive: !isActive } : r
+        )
+      }))
       toast.success(isActive ? "Review hidden" : "Review visible")
-      fetchSettings()
     } catch {
       // Error handled globally
     } finally {
@@ -505,6 +571,86 @@ export default function SiteSettingsPage() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Text Colors</CardTitle>
+              <CardDescription>Customize text colors (leave empty to use theme defaults)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>Headline Color</Label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color" 
+                      value={hero.headlineColor || "#ffffff"}
+                      onChange={(e) => setHero({ ...hero, headlineColor: e.target.value })}
+                      className="w-10 h-10 rounded cursor-pointer border border-border"
+                    />
+                    <Input 
+                      value={hero.headlineColor} 
+                      onChange={(e) => setHero({ ...hero, headlineColor: e.target.value })} 
+                      placeholder="#ffffff or empty"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Subheadline Color</Label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color" 
+                      value={hero.subheadlineColor || "#22c55e"}
+                      onChange={(e) => setHero({ ...hero, subheadlineColor: e.target.value })}
+                      className="w-10 h-10 rounded cursor-pointer border border-border"
+                    />
+                    <Input 
+                      value={hero.subheadlineColor} 
+                      onChange={(e) => setHero({ ...hero, subheadlineColor: e.target.value })} 
+                      placeholder="#22c55e or empty"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Description Color</Label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color" 
+                      value={hero.descriptionColor || "#a1a1aa"}
+                      onChange={(e) => setHero({ ...hero, descriptionColor: e.target.value })}
+                      className="w-10 h-10 rounded cursor-pointer border border-border"
+                    />
+                    <Input 
+                      value={hero.descriptionColor} 
+                      onChange={(e) => setHero({ ...hero, descriptionColor: e.target.value })} 
+                      placeholder="#a1a1aa or empty"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Badge Color</Label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="color" 
+                      value={hero.badgeColor || "#22c55e"}
+                      onChange={(e) => setHero({ ...hero, badgeColor: e.target.value })}
+                      className="w-10 h-10 rounded cursor-pointer border border-border"
+                    />
+                    <Input 
+                      value={hero.badgeColor} 
+                      onChange={(e) => setHero({ ...hero, badgeColor: e.target.value })} 
+                      placeholder="#22c55e or empty"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Tip: Clear the hex value to reset to theme default colors</p>
+            </CardContent>
+          </Card>
+
           <Button onClick={handleSaveHero} disabled={saving} className="w-full sm:w-auto">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             Save Hero Section
@@ -573,7 +719,7 @@ export default function SiteSettingsPage() {
                     <span className="text-sm text-primary cursor-pointer hover:underline flex items-center gap-1">
                       <Upload className="h-4 w-4" />Select Image
                     </span>
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => setNewReviewImage(e.target.files?.[0] || null)} />
+                    <input id="newReviewImageInput" type="file" accept="image/*" className="hidden" onChange={(e) => setNewReviewImage(e.target.files?.[0] || null)} />
                   </label>
                 </div>
                 <div className="flex-1 space-y-4">

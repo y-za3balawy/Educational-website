@@ -55,6 +55,11 @@ const siteSettingsSchema = new mongoose.Schema({
         overlayOpacity: { type: Number, default: 70, min: 0, max: 100 },
         overlayDirection: { type: String, default: 'left-to-right', enum: ['left-to-right', 'right-to-left', 'top-to-bottom', 'full'] },
         showFeatureCards: { type: Boolean, default: false },
+        // Text colors
+        headlineColor: { type: String, default: '' }, // Empty = use theme default
+        subheadlineColor: { type: String, default: '' },
+        descriptionColor: { type: String, default: '' },
+        badgeColor: { type: String, default: '' },
         // Text content
         headline: { type: String, default: 'Master Business & Economics' },
         subheadline: { type: String, default: 'with Mr. Mahmoud Said' },

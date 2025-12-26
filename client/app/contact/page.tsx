@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navigation } from "@/components/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,11 +10,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { api } from "@/lib/api"
 import { toast } from "@/lib/toast"
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react"
+import { Mail, Phone, MapPin, Clock, Send, CheckCircle, Loader2 } from "lucide-react"
+
+interface ContactInfo {
+  email: string
+  phone: string
+  address: string
+  workingHours: string
+  responseTime: string
+}
 
 export default function ContactPage() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [contactInfo, setContactInfo] = useState<ContactInfo>({
+    email: "",
+    phone: "",
+    address: "",
+    workingHours: "",
+    responseTime: ""
+  })
+  const [loadingInfo, setLoadingInfo] = useState(true)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,6 +41,29 @@ export default function ContactPage() {
     category: "general",
     level: ""
   })
+
+  useEffect(() => {
+    async function fetchContactInfo() {
+      try {
+        const res = await api.getPublicSettings()
+        const data = res.data as { contact?: ContactInfo }
+        if (data?.contact) {
+          setContactInfo({
+            email: data.contact.email || "",
+            phone: data.contact.phone || "",
+            address: data.contact.address || "",
+            workingHours: data.contact.workingHours || "",
+            responseTime: data.contact.responseTime || ""
+          })
+        }
+      } catch (error) {
+        console.error("Failed to fetch contact info:", error)
+      } finally {
+        setLoadingInfo(false)
+      }
+    }
+    fetchContactInfo()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,50 +117,83 @@ export default function ContactPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {/* Contact Info */}
             <div className="space-y-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <Mail className="h-5 w-5 text-primary mt-1" />
-                    <div>
-                      <h3 className="font-semibold">Email</h3>
-                      <p className="text-sm text-muted-foreground">support@bioigcse.com</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <Phone className="h-5 w-5 text-primary mt-1" />
-                    <div>
-                      <h3 className="font-semibold">Phone</h3>
-                      <p className="text-sm text-muted-foreground">+20 123 456 7890</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <MapPin className="h-5 w-5 text-primary mt-1" />
-                    <div>
-                      <h3 className="font-semibold">Location</h3>
-                      <p className="text-sm text-muted-foreground">Cairo, Egypt</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <Clock className="h-5 w-5 text-primary mt-1" />
-                    <div>
-                      <h3 className="font-semibold">Response Time</h3>
-                      <p className="text-sm text-muted-foreground">Within 24 hours</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {loadingInfo ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <>
+                  {contactInfo.email && (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-4">
+                          <Mail className="h-5 w-5 text-primary mt-1" />
+                          <div>
+                            <h3 className="font-semibold">Email</h3>
+                            <a href={`mailto:${contactInfo.email}`} className="text-sm text-muted-foreground hover:text-primary">
+                              {contactInfo.email}
+                            </a>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {contactInfo.phone && (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-4">
+                          <Phone className="h-5 w-5 text-primary mt-1" />
+                          <div>
+                            <h3 className="font-semibold">Phone</h3>
+                            <a href={`tel:${contactInfo.phone}`} className="text-sm text-muted-foreground hover:text-primary">
+                              {contactInfo.phone}
+                            </a>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {contactInfo.address && (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-4">
+                          <MapPin className="h-5 w-5 text-primary mt-1" />
+                          <div>
+                            <h3 className="font-semibold">Location</h3>
+                            <p className="text-sm text-muted-foreground">{contactInfo.address}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {contactInfo.workingHours && (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-4">
+                          <Clock className="h-5 w-5 text-primary mt-1" />
+                          <div>
+                            <h3 className="font-semibold">Working Hours</h3>
+                            <p className="text-sm text-muted-foreground">{contactInfo.workingHours}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {contactInfo.responseTime && (
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-4">
+                          <Clock className="h-5 w-5 text-primary mt-1" />
+                          <div>
+                            <h3 className="font-semibold">Response Time</h3>
+                            <p className="text-sm text-muted-foreground">{contactInfo.responseTime}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Contact Form */}
