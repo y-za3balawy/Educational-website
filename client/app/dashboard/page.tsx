@@ -22,6 +22,9 @@ interface Stats {
   totalPapers: number
   totalPosts: number
   totalUsers: number
+  totalViews: number
+  totalDownloads: number
+  growth: number
   recentActivity: Array<{
     type: string
     title: string
@@ -36,6 +39,9 @@ export default function DashboardPage() {
     totalPapers: 0,
     totalPosts: 0,
     totalUsers: 0,
+    totalViews: 0,
+    totalDownloads: 0,
+    growth: 0,
     recentActivity: []
   })
   const [loading, setLoading] = useState(true)
@@ -43,26 +49,55 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        // Fetch counts from API
-        const [quizzesRes, papersRes, postsRes] = await Promise.all([
-          api.getQuizzes({ limit: "1" }),
-          api.getPastPapers({ limit: "1" }),
-          api.getPosts({ limit: "1" })
+        // Fetch overview stats from analytics API
+        const [overviewRes, activityRes] = await Promise.all([
+          api.getAnalyticsOverview('30d'),
+          api.getAnalyticsActivity(5)
         ])
         
+        const overview = (overviewRes.data as {
+          totalViews?: { value: number; change: number }
+          totalDownloads?: { value: number }
+          totals?: { users: number; quizzes: number; posts: number; papers: number }
+        })
+        
+        const activities = (activityRes.data as Array<{
+          type: string
+          details?: string
+          action: string
+          timeFormatted: string
+        }>) || []
+        
         setStats({
-          totalQuizzes: (quizzesRes.data as { pagination?: { total?: number } })?.pagination?.total || 0,
-          totalPapers: (papersRes.data as { pagination?: { total?: number } })?.pagination?.total || 0,
-          totalPosts: (postsRes.data as { pagination?: { total?: number } })?.pagination?.total || 0,
-          totalUsers: 0,
-          recentActivity: [
-            { type: "quiz", title: "Cell Biology Quiz", date: "2 hours ago" },
-            { type: "paper", title: "Cambridge 2024 Paper 2", date: "5 hours ago" },
-            { type: "post", title: "Study Tips for IGCSE", date: "1 day ago" },
-          ]
+          totalQuizzes: overview?.totals?.quizzes || 0,
+          totalPapers: overview?.totals?.papers || 0,
+          totalPosts: overview?.totals?.posts || 0,
+          totalUsers: overview?.totals?.users || 0,
+          totalViews: overview?.totalViews?.value || 0,
+          totalDownloads: overview?.totalDownloads?.value || 0,
+          growth: overview?.totalViews?.change || 0,
+          recentActivity: activities.slice(0, 5).map(a => ({
+            type: a.type.includes('quiz') ? 'quiz' : a.type.includes('user') ? 'user' : 'post',
+            title: a.details || a.action,
+            date: a.timeFormatted
+          }))
         })
       } catch (error) {
         console.error("Failed to fetch stats:", error)
+        // Fallback to basic counts
+        try {
+          const [quizzesRes, papersRes, postsRes] = await Promise.all([
+            api.getQuizzes({ limit: "1" }),
+            api.getPastPapers({ limit: "1" }),
+            api.getPosts({ limit: "1" })
+          ])
+          setStats(prev => ({
+            ...prev,
+            totalQuizzes: (quizzesRes.data as { pagination?: { total?: number } })?.pagination?.total || 0,
+            totalPapers: (papersRes.data as { pagination?: { total?: number } })?.pagination?.total || 0,
+            totalPosts: (postsRes.data as { pagination?: { total?: number } })?.pagination?.total || 0,
+          }))
+        } catch {}
       } finally {
         setLoading(false)
       }
@@ -176,19 +211,21 @@ export default function DashboardPage() {
                 <span className="text-muted-foreground flex items-center gap-2">
                   <Eye className="h-4 w-4" /> Total Views
                 </span>
-                <span className="font-medium">12,450</span>
+                <span className="font-medium">{loading ? "..." : stats.totalViews.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-2">
                   <Download className="h-4 w-4" /> Downloads
                 </span>
-                <span className="font-medium">3,280</span>
+                <span className="font-medium">{loading ? "..." : stats.totalDownloads.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" /> Growth
                 </span>
-                <span className="font-medium text-green-500">+12%</span>
+                <span className={`font-medium ${stats.growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {loading ? "..." : `${stats.growth >= 0 ? '+' : ''}${stats.growth}%`}
+                </span>
               </div>
             </div>
           </div>

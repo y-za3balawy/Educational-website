@@ -8,9 +8,9 @@ const pastPaperSchema = new mongoose.Schema({
         min: [2000, 'Year must be 2000 or later'],
         max: [new Date().getFullYear() + 1, 'Year cannot be in the future']
     },
-    session: { type: String, enum: ['may', 'january'], required: true },
+    session: { type: String, enum: ['may', 'january', 'may_june', 'oct_nov'], required: true },
     board: { type: String, enum: ['cambridge', 'edexcel', 'oxford'], required: true },
-    level: { type: String, enum: ['olevel', 'alevel'], required: true },
+    level: { type: String, enum: ['olevel', 'alevel', 'igcse'], required: true },
     // A-Level sub-level (AS or A2)
     subLevel: { type: String, enum: ['as', 'a2', null], default: null },
     subject: { 

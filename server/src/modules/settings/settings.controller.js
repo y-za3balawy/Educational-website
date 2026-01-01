@@ -121,7 +121,8 @@ export const updateAboutContent = asyncHandler(async (req, res) => {
     const aboutFields = [
         'name', 'title', 'shortBio', 'email', 'phone', 'location',
         'mainHeading', 'mainContent', 'qualifications',
-        'philosophyHeading', 'philosophyQuote', 'ctaText', 'ctaLink'
+        'philosophyHeading', 'philosophyQuote', 'ctaText', 'ctaLink',
+        'heroHeadline', 'heroDescription'
     ];
     
     aboutFields.forEach(field => {
@@ -129,6 +130,17 @@ export const updateAboutContent = asyncHandler(async (req, res) => {
             settings.about[field] = req.body[field];
         }
     });
+    
+    // Handle places array
+    if (req.body.places !== undefined) {
+        try {
+            settings.about.places = typeof req.body.places === 'string' 
+                ? JSON.parse(req.body.places) 
+                : req.body.places;
+        } catch (e) {
+            settings.about.places = [];
+        }
+    }
     
     settings.lastUpdatedBy = req.user._id;
     await settings.save();
@@ -223,7 +235,7 @@ export const uploadLogo = asyncHandler(async (req, res) => {
 export const updateHeroSection = asyncHandler(async (req, res) => {
     const settings = await SiteSettings.getSettings();
     
-    // Handle file upload for background image
+    // Handle file upload for background image (legacy single image)
     if (req.file) {
         // Delete old image if exists
         if (settings.hero?.backgroundImage?.publicId) {
@@ -246,7 +258,8 @@ export const updateHeroSection = asyncHandler(async (req, res) => {
         'ctaText', 'ctaLink', 'secondaryCtaText', 'secondaryCtaLink',
         'statsNumber', 'statsLabel',
         'imagePosition', 'imageSize', 'overlayOpacity', 'overlayDirection', 'showFeatureCards',
-        'headlineColor', 'subheadlineColor', 'descriptionColor', 'badgeColor'
+        'headlineColor', 'subheadlineColor', 'descriptionColor', 'badgeColor',
+        'sliderAutoPlay', 'sliderInterval'
     ];
     
     if (!settings.hero) settings.hero = {};
@@ -254,9 +267,9 @@ export const updateHeroSection = asyncHandler(async (req, res) => {
     heroFields.forEach(field => {
         if (req.body[field] !== undefined) {
             // Handle numeric fields
-            if (field === 'overlayOpacity') {
+            if (field === 'overlayOpacity' || field === 'sliderInterval') {
                 settings.hero[field] = parseInt(req.body[field], 10);
-            } else if (field === 'showFeatureCards') {
+            } else if (field === 'showFeatureCards' || field === 'sliderAutoPlay') {
                 settings.hero[field] = req.body[field] === 'true' || req.body[field] === true;
             } else {
                 settings.hero[field] = req.body[field];
@@ -271,6 +284,120 @@ export const updateHeroSection = asyncHandler(async (req, res) => {
         success: true,
         message: 'Hero section updated successfully',
         data: { hero: settings.hero }
+    });
+});
+
+/**
+ * Add slider image (admin only)
+ */
+export const addSliderImage = asyncHandler(async (req, res) => {
+    const settings = await SiteSettings.getSettings();
+    
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No image uploaded' });
+    }
+    
+    if (!settings.hero) settings.hero = {};
+    if (!settings.hero.sliderImages) settings.hero.sliderImages = [];
+    
+    const newSlide = {
+        image: {
+            url: req.file.path,
+            publicId: req.file.filename
+        },
+        title: req.body.title || '',
+        order: settings.hero.sliderImages.length,
+        isActive: true
+    };
+    
+    settings.hero.sliderImages.push(newSlide);
+    settings.lastUpdatedBy = req.user._id;
+    await settings.save();
+    
+    res.status(201).json({
+        success: true,
+        message: 'Slider image added successfully',
+        data: { slide: settings.hero.sliderImages[settings.hero.sliderImages.length - 1] }
+    });
+});
+
+/**
+ * Update slider image (admin only)
+ */
+export const updateSliderImage = asyncHandler(async (req, res) => {
+    const { slideId } = req.params;
+    const settings = await SiteSettings.getSettings();
+    
+    const slideIndex = settings.hero?.sliderImages?.findIndex(s => s._id.toString() === slideId);
+    
+    if (slideIndex === -1 || slideIndex === undefined) {
+        return res.status(404).json({ success: false, message: 'Slider image not found' });
+    }
+    
+    if (req.body.title !== undefined) {
+        settings.hero.sliderImages[slideIndex].title = req.body.title;
+    }
+    if (req.body.order !== undefined) {
+        settings.hero.sliderImages[slideIndex].order = parseInt(req.body.order, 10);
+    }
+    if (req.body.isActive !== undefined) {
+        settings.hero.sliderImages[slideIndex].isActive = req.body.isActive === 'true' || req.body.isActive === true;
+    }
+    
+    // Handle new image upload
+    if (req.file) {
+        if (settings.hero.sliderImages[slideIndex].image?.publicId) {
+            try {
+                await deleteFromCloudinary(settings.hero.sliderImages[slideIndex].image.publicId);
+            } catch (e) {
+                console.error('Failed to delete old slider image:', e);
+            }
+        }
+        settings.hero.sliderImages[slideIndex].image = {
+            url: req.file.path,
+            publicId: req.file.filename
+        };
+    }
+    
+    settings.lastUpdatedBy = req.user._id;
+    await settings.save();
+    
+    res.status(200).json({
+        success: true,
+        message: 'Slider image updated successfully',
+        data: { slide: settings.hero.sliderImages[slideIndex] }
+    });
+});
+
+/**
+ * Delete slider image (admin only)
+ */
+export const deleteSliderImage = asyncHandler(async (req, res) => {
+    const { slideId } = req.params;
+    const settings = await SiteSettings.getSettings();
+    
+    const slideIndex = settings.hero?.sliderImages?.findIndex(s => s._id.toString() === slideId);
+    
+    if (slideIndex === -1 || slideIndex === undefined) {
+        return res.status(404).json({ success: false, message: 'Slider image not found' });
+    }
+    
+    // Delete image from cloudinary
+    if (settings.hero.sliderImages[slideIndex].image?.publicId) {
+        try {
+            await deleteFromCloudinary(settings.hero.sliderImages[slideIndex].image.publicId);
+        } catch (e) {
+            console.error('Failed to delete slider image:', e);
+        }
+    }
+    
+    settings.hero.sliderImages.splice(slideIndex, 1);
+    settings.lastUpdatedBy = req.user._id;
+    await settings.save();
+    
+    res.status(200).json({
+        success: true,
+        message: 'Slider image deleted successfully'
     });
 });
 

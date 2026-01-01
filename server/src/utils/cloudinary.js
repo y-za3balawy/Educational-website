@@ -14,18 +14,27 @@ cloudinary.config({
 
 console.log('Cloudinary configured with cloud:', process.env.CLOUDINARY_CLOUD_NAME);
 
-const createCloudinaryStorage = (folder, allowedFormats, resourceType = 'auto') => {
+const createCloudinaryStorage = (folder, allowedFormats, resourceType = 'auto', transformation = null) => {
     return new CloudinaryStorage({
         cloudinary,
         params: {
             folder: `biology-education/${folder}`,
             allowed_formats: allowedFormats,
-            resource_type: resourceType
+            resource_type: resourceType,
+            ...(transformation && { transformation })
         }
     });
 };
 
-export const imageStorage = createCloudinaryStorage('images', ['jpg', 'jpeg', 'png', 'gif', 'webp'], 'image');
+// Slider images - auto optimized for web, preserve aspect ratio
+export const sliderImageStorage = createCloudinaryStorage(
+    'slider', 
+    ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'heic', 'heif'], 
+    'image',
+    [{ width: 1920, quality: 'auto', fetch_format: 'auto' }]
+);
+
+export const imageStorage = createCloudinaryStorage('images', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'heic', 'heif'], 'image');
 export const videoStorage = createCloudinaryStorage('videos', ['mp4', 'mov', 'avi', 'webm'], 'video');
 export const documentStorage = createCloudinaryStorage('documents', ['pdf', 'doc', 'docx', 'ppt', 'pptx'], 'raw');
 

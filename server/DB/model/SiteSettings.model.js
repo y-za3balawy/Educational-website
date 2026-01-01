@@ -23,6 +23,16 @@ const reviewSchema = new mongoose.Schema({
     isActive: { type: Boolean, default: true }
 }, { _id: true, timestamps: true });
 
+const sliderImageSchema = new mongoose.Schema({
+    image: {
+        url: { type: String, required: true },
+        publicId: String
+    },
+    title: { type: String },
+    order: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true }
+}, { _id: true, timestamps: true });
+
 const siteSettingsSchema = new mongoose.Schema({
     // Singleton identifier
     key: {
@@ -45,6 +55,11 @@ const siteSettingsSchema = new mongoose.Schema({
     
     // Hero Section
     hero: {
+        // Slider images
+        sliderImages: [sliderImageSchema],
+        sliderAutoPlay: { type: Boolean, default: true },
+        sliderInterval: { type: Number, default: 5000 }, // milliseconds
+        // Legacy single background image (kept for backward compatibility)
         backgroundImage: {
             url: String,
             publicId: String
@@ -83,6 +98,9 @@ const siteSettingsSchema = new mongoose.Schema({
             url: String,
             publicId: String
         },
+        // About page hero description
+        heroDescription: { type: String, default: 'As an IGCSE Business teacher with nine years of experience, I have had the pleasure of guiding students through the intricacies of the Cambridge, Edexcel, and Oxford examination boards. My passion for education and commitment to student success have resulted in an impressive track record, with 80% of my students achieving A* grades. This success is a testament to my interactive teaching style, which emphasizes real-world applications of business concepts while fostering critical thinking and problem-solving skills. I strive to create a dynamic learning environment where students feel empowered to engage with the material and develop a genuine interest in the subject.' },
+        heroHeadline: { type: String, default: "Welcome to Mr. Mahmoud's Hub" },
         email: { type: String, default: 'contact@bioigcse.com' },
         phone: String,
         location: { type: String, default: 'Available Online Worldwide' },
@@ -100,7 +118,10 @@ const siteSettingsSchema = new mongoose.Schema({
         
         // Call to Action
         ctaText: { type: String, default: 'Book a Session' },
-        ctaLink: { type: String, default: '/contact' }
+        ctaLink: { type: String, default: '/contact' },
+        
+        // Places/Locations
+        places: [{ type: String }]
     },
     
     // Contact Info (used across site)

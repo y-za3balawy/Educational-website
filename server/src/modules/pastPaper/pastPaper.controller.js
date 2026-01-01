@@ -111,10 +111,12 @@ export const uploadExaminerReport = asyncHandler(async (req, res, next) => {
 });
 
 export const trackDownload = asyncHandler(async (req, res, next) => {
-    const paper = await PastPaper.findById(req.params.id);
+    const paper = await PastPaper.findByIdAndUpdate(
+        req.params.id,
+        { $inc: { downloadCount: 1 } },
+        { new: true }
+    );
     if (!paper) return next(new AppError('Past paper not found', 404));
-    paper.downloadCount += 1;
-    await paper.save();
     res.status(200).json({ success: true, data: { downloadUrl: paper.paperUrl } });
 });
 

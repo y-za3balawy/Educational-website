@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Menu, X, TrendingUp, User, LogOut, LayoutDashboard, Settings, ChevronDown } from "lucide-react"
+import { Menu, X, User, LogOut, LayoutDashboard, Settings, ChevronDown } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
@@ -45,9 +45,8 @@ export function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-6xl mx-auto px-4 py-1.5">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-base">Mr. Mahmoud Said</span>
+          <Link href="/" className="flex items-center">
+            <span className="font-semibold text-base">IG Business Hub</span>
           </Link>
 
           {/* Desktop Navigation */}

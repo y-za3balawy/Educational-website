@@ -70,6 +70,15 @@ export default function PastPapersPage() {
     return "O-Level"
   }
 
+  const handleDownload = async (paperId: string, url: string) => {
+    try {
+      await api.trackPaperDownload(paperId)
+    } catch (error) {
+      console.error("Failed to track download:", error)
+    }
+    window.open(url, "_blank")
+  }
+
   const clearFilters = () => {
     setFilters({ subject: "all", board: "all", level: "all", subLevel: "all", session: "all", year: "all" })
   }
@@ -252,7 +261,7 @@ export default function PastPapersPage() {
                             variant="outline"
                             size="sm"
                             className="gap-2"
-                            onClick={() => window.open(paper.paperUrl, "_blank")}
+                            onClick={() => handleDownload(paper._id, paper.paperUrl)}
                           >
                             <Eye className="h-4 w-4" />
                             <span className="hidden sm:inline">Question Paper</span>
@@ -263,7 +272,7 @@ export default function PastPapersPage() {
                               variant="outline"
                               size="sm"
                               className="gap-2"
-                              onClick={() => window.open(paper.markSchemeUrl, "_blank")}
+                              onClick={() => handleDownload(paper._id, paper.markSchemeUrl!)}
                             >
                               <Download className="h-4 w-4" />
                               <span className="hidden sm:inline">Mark Scheme</span>

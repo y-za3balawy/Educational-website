@@ -1,6 +1,12 @@
 import multer from 'multer';
 import { AppError } from '../utils/ErrorClass.js';
-import { uploadImage, uploadVideo, uploadDocument, uploadMixed } from '../utils/cloudinary.js';
+import { uploadImage, uploadVideo, uploadDocument, uploadMixed, sliderImageStorage } from '../utils/cloudinary.js';
+
+// Create multer instance for slider images with optimization
+const uploadSlider = multer({
+    storage: sliderImageStorage,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB for high-res images
+});
 
 const imageFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
@@ -41,7 +47,13 @@ export const uploadMultipleDocuments = uploadDocument.array('documents', 5);
 export const uploadPostMedia = uploadMixed.array('media', 10);
 
 // Generic single file upload with custom field name
-export const uploadSingle = (fieldName) => uploadImage.single(fieldName);
+export const uploadSingle = (fieldName) => {
+    // Use optimized slider storage for slider images
+    if (fieldName === 'sliderImage') {
+        return uploadSlider.single(fieldName);
+    }
+    return uploadImage.single(fieldName);
+};
 
 export const handleUploadError = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {

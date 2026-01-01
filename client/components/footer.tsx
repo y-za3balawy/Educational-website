@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { TrendingUp, Mail, Phone, MapPin } from "lucide-react"
+import { Mail, Phone, MapPin } from "lucide-react"
 import { api } from "@/lib/api"
 
 interface ContactInfo {
@@ -47,9 +47,8 @@ export function Footer() {
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <TrendingUp className="h-6 w-6 text-primary" />
-              <span className="font-semibold text-lg">Mr. Mahmoud Said</span>
+            <Link href="/" className="flex items-center mb-4">
+              <span className="font-semibold text-lg">IG Business Hub</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
               Helping students excel in Business and Economics with comprehensive resources, past papers, and interactive
@@ -125,7 +124,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border mt-8 pt-8 text-center">
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Mr. Mahmoud Said. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} IG Business Hub. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -338,6 +338,9 @@ class ApiClient {
         return this.request(`/past-papers${query}`);
     }
 
+    async trackPaperDownload(paperId: string) {
+        return this.request(`/past-papers/${paperId}/download`, { method: 'POST' });
+    }
     async getPastPaper(id: string) {
         return this.request(`/past-papers/${id}`);
     }
@@ -553,6 +556,26 @@ class ApiClient {
 
     async deleteReview(reviewId: string) {
         return this.request(`/settings/reviews/${reviewId}`, { method: 'DELETE' });
+    }
+
+    // ==================== SLIDER ====================
+    
+    async addSliderImage(data: FormData) {
+        return this.uploadRequest('/settings/slider', data, 'POST');
+    }
+
+    async updateSliderImage(slideId: string, data: FormData | Record<string, unknown>) {
+        if (data instanceof FormData) {
+            return this.uploadRequest(`/settings/slider/${slideId}`, data, 'PATCH');
+        }
+        return this.request(`/settings/slider/${slideId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteSliderImage(slideId: string) {
+        return this.request(`/settings/slider/${slideId}`, { method: 'DELETE' });
     }
 }
 

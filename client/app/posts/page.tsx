@@ -3,9 +3,10 @@
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import Link from "next/link"
-import { Calendar, Clock, ArrowRight, Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Calendar, Clock, ArrowRight, Loader2, Search } from "lucide-react"
+import { useEffect, useState, useMemo } from "react"
 import { api } from "@/lib/api"
+import { Input } from "@/components/ui/input"
 
 interface Post {
   _id: string
@@ -18,23 +19,28 @@ interface Post {
   views: number
 }
 
-const categories = ["All", "Cell Biology", "Plant Biology", "Human Biology", "Ecology", "Genetics", "Exam Tips"]
-
 export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState("All")
+  const [searchQuery, setSearchQuery] = useState("")
+
+  // Extract unique categories from posts
+  const categories = useMemo(() => {
+    const uniqueTopics = new Set<string>()
+    posts.forEach(post => {
+      if (post.topic) uniqueTopics.add(post.topic)
+      if (post.board) uniqueTopics.add(post.board)
+    })
+    return ["All", ...Array.from(uniqueTopics)]
+  }, [posts])
 
   useEffect(() => {
     async function fetchPosts() {
       try {
         setLoading(true)
-        const params: Record<string, string> = { limit: "20" }
-        if (selectedCategory !== "All") {
-          params.search = selectedCategory
-        }
-        const response = await api.getPosts(params)
+        const response = await api.getPosts({ limit: "50" })
         setPosts((response.data as { posts: Post[] })?.posts || [])
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load posts")
@@ -43,7 +49,21 @@ export default function PostsPage() {
       }
     }
     fetchPosts()
-  }, [selectedCategory])
+  }, [])
+
+  // Filter posts by category and search
+  const filteredPosts = useMemo(() => {
+    return posts.filter(post => {
+      const matchesCategory = selectedCategory === "All" || 
+        post.topic === selectedCategory || 
+        post.board === selectedCategory
+      const matchesSearch = !searchQuery || 
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.topic?.toLowerCase().includes(searchQuery.toLowerCase())
+      return matchesCategory && matchesSearch
+    })
+  }, [posts, selectedCategory, searchQuery])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -61,25 +81,39 @@ export default function PostsPage() {
           <div className="mb-12">
             <h1 className="text-4xl font-bold mb-4">Blog Posts</h1>
             <p className="text-muted-foreground text-lg max-w-2xl">
-              Study guides, exam tips, and biology explanations to help you succeed in your exams.
+              Study guides, exam tips, and explanations to help you succeed in your exams.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-8">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-full text-sm transition-colors ${
-                  category === selectedCategory
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+          {/* Search Input */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search posts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
+
+          {/* Categories */}
+          {categories.length > 1 && (
+            <div className="flex flex-wrap gap-2 mb-8">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                    category === selectedCategory
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          )}
 
           {loading ? (
             <div className="flex justify-center py-12">
@@ -88,15 +122,19 @@ export default function PostsPage() {
           ) : error ? (
             <div className="text-center py-12">
               <p className="text-red-500 mb-4">{error}</p>
-              <p className="text-muted-foreground">Make sure the backend server is running on port 5000</p>
+              <p className="text-muted-foreground">Make sure the backend server is running</p>
             </div>
-          ) : posts.length === 0 ? (
+          ) : filteredPosts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No posts found. Check back later!</p>
+              <p className="text-muted-foreground">
+                {searchQuery || selectedCategory !== "All" 
+                  ? "No posts found matching your criteria." 
+                  : "No posts found. Check back later!"}
+              </p>
             </div>
           ) : (
             <div className="grid gap-6">
-              {posts.map((post) => (
+              {filteredPosts.map((post) => (
                 <Link
                   key={post._id}
                   href={`/posts/${post._id}`}

@@ -25,4 +25,9 @@ router.post('/reviews', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN),
 router.patch('/reviews/:reviewId', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('reviewImage'), handleUploadError, settingsController.updateReview);
 router.delete('/reviews/:reviewId', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), settingsController.deleteReview);
 
+// Slider routes
+router.post('/slider', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('sliderImage'), handleUploadError, settingsController.addSliderImage);
+router.patch('/slider/:slideId', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), uploadSingle('sliderImage'), handleUploadError, settingsController.updateSliderImage);
+router.delete('/slider/:slideId', authenticate, authorize(ROLES.ADMIN, ROLES.SUPER_ADMIN), settingsController.deleteSliderImage);
+
 export default router;
